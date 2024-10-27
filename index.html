@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>שליפת תמונות ממוזערות מיוטיוב</title>
+    <title>שליפתת תמונות ממוזערות מיוטיוב</title>
     <style>
         body { 
             font-family: Arial, sans-serif; 
@@ -66,6 +66,16 @@
 <div id="thumbnails"></div>
 
 <script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const videoUrl = urlParams.get('v');
+        
+        if (videoUrl) {
+            document.getElementById("youtubeLink").value = videoUrl;
+            fetchThumbnails();
+        }
+    });
+
     function handleKeyPress(event) {
         if (event.key === 'Enter') {
             fetchThumbnails();
