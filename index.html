@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>שליפת תמונות ממוזערות מיוטיוב</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip-utils/0.1.0/jszip-utils.min.js"></script>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            background-color: #f9f9f9; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            padding: 20px;
+        }
+        h2 { color: #333; }
+        input, button { 
+            font-size: 16px; 
+            padding: 10px; 
+            margin: 10px 0; 
+            width: 100%; 
+            max-width: 400px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        button {
+            background-color: #007bff; 
+            color: #fff; 
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #thumbnails {
+            display: flex; 
+            flex-wrap: wrap; 
+            justify-content: center; 
+            margin-top: 20px;
+        }
+        .thumbnail {
+            margin: 10px; 
+            border-radius: 5px; 
+            overflow: hidden; 
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            position: relative;
+            text-align: center;
+        }
+        .thumbnail img {
+            width: 100%; 
+            height: auto;
+        }
+        .download-btn {
+            margin-top: 5px;
+            font-size: 14px;
+            padding: 5px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+        #downloadZipBtn {
+            display: none;
+            font-size: 16px; 
+            padding: 10px;
+            margin-top: 10px;
+            background-color: #ff7b00;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<h2>הכנס קישור של יוטיוב כדי לקבל תמונות ממוזערות באיכות גבוהה</h2>
+<input type="text" id="youtubeLink" placeholder="הכנס קישור של YouTube" onkeypress="handleKeyPress(event)">
+<button onclick="fetchThumbnails()">הצג תמונות</button>
+<button id="downloadZipBtn" onclick="downloadAllAsZip()">הורד את כל התמונות כקובץ ZIP</button>
+
+<div id="thumbnails"></div>
+
+<script>
+    function handleKeyPress(event) {
+        if (event.key === 'Enter') {
+            fetchThumbnails();
+        }
+    }
+
+    function fetchThumbnails() {
+        const url = document.getElementById("youtubeLink").value;
+        const videoId = getYouTubeVideoId(url);
+        
+        if (videoId) {
+            const thumbnailUrls = [
+                `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
+                `https://img.youtube.com/vi/${videoId}/sddefault.jpg`,
+                `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
+                `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`
+            ];
+
+            const thumbnailsDiv = document.getElementById("thumbnails");
+            thumbnailsDiv.innerHTML = "";
+            document.getElementById("downloadZipBtn").style.display = "block";
+
+            thumbnailUrls.forEach(thumbnailUrl => {
+                const div = document.createElement("div");
+                div.classList.add("thumbnail");
+
+                const img = document.createElement("img");
+                img.src = thumbnailUrl;
+
+                const downloadBtn = document.createElement("button");
+                downloadBtn.classList.add("download-btn");
+                downloadBtn.innerText = "הורד תמונה";
+                downloadBtn.onclick = () => downloadImage(thumbnailUrl);
+
+                div.appendChild(img);
+                div.appendChild(downloadBtn);
+                thumbnailsDiv.appendChild(div);
+            });
+        } else {
+            alert("אנא הכנס קישור תקין של YouTube.");
+        }
+    }
+
+    function getYouTubeVideoId(url) {
+        const regex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+        const match = url.match(regex);
+        return match ? match[1] : null;
+    }
+
+    async function downloadImage(url) {
+        try {
+            const response = await fetch(url, { mode: 'cors' });
+            if (!response.ok) throw new Error('הורדת התמונה נכשלה');
+            const blob = await response.blob();
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = url.split('/').pop();
+            link.click();
+        } catch (error) {
+            alert(error.message);
+        }
+    }
+
+    async function downloadAllAsZip() {
+        try {
+            const zip = new JSZip();
+            const thumbnails = document.querySelectorAll(".thumbnail img");
+
+            for (let i = 0; i < thumbnails.length; i++) {
+                const imgURL = thumbnails[i].src;
+                const fileName = `thumbnail_${i + 1}.jpg`;
+                const response = await fetch(imgURL, { mode: 'cors' });
+                if (!response.ok) throw new Error(`הורדת תמונה ${i + 1} נכשלה`);
+                const blob = await response.blob();
+                zip.file(fileName, blob);
+            }
+
+            zip.generateAsync({ type: "blob" }).then(content => {
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(content);
+                link.download = "thumbnails.zip";
+                link.click();
+            });
+        } catch (error) {
+            alert(error.message);
+        }
+    }
+</script>
+
+</body>
+</html>
